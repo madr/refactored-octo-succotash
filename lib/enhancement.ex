@@ -132,14 +132,10 @@ defmodule Enhancement do
     end
   end
 
-  def add_dice_bonus(dice, options \\ []) do
-    dice
-    |> fort_bonus(@is_fort in options)
-    |> hero_bonus(@has_hero in options)
-  end
-
-  def add_benefit(dice, options \\ []) do
+  def enhance_dice(dice, options \\ []) do
     dice
     |> strong_offence_benefit(@can_use_1_die in options)
+    |> hero_bonus(@has_hero in options)
+    |> fort_bonus(@is_fort in options)
   end
 end
