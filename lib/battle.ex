@@ -1,6 +1,10 @@
 defmodule Battle do
   @moduledoc """
-  RISK Battle, where the attacking and defending armies make war using dice. Following rules applies:
+  The Battle module holds the logic for a simulated RISK Battle, where the attacking and defending
+  armies make war using dice.
+
+  Following rules applies:
+
   1. The attacker and the defender rolls 1-3 dice. *
   2. the highest roll of the attacker are matched vs the highest roll of the attacker.
   3. The second highest pair are matched.
