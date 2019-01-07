@@ -16,9 +16,9 @@ defmodule Summary do
 
   ## Examples
 
-      iex> Summary.avg_remaining([{:a, 3}, {:b, 4}, {:c, 5}])
+      iex> Summary.avg_remaining([3, 4, 5])
       4
-      iex> Summary.avg_remaining([{:a, 1}, {:b, 1}, {:b, 1}, {:c, 5}])
+      iex> Summary.avg_remaining([1, 1, 1, 5])
       2
 
   """
@@ -26,7 +26,6 @@ defmodule Summary do
     num = Enum.count(victories)
 
     victories
-    |> Enum.map(fn {_, v} -> v end)
     |> Enum.sum()
     |> Integer.floor_div(num)
   end
@@ -36,9 +35,9 @@ defmodule Summary do
 
   ## Examples
 
-      iex> Summary.med_remaining([{:a, 1}, {:b, 6}, {:c, 7}])
+      iex> Summary.med_remaining([1, 6, 7])
       6
-      iex> Summary.med_remaining([{:a, 1}, {:b, 6}, {:b, 7}, {:c, 8}])
+      iex> Summary.med_remaining([1, 6, 7, 8])
       7
 
   """
@@ -51,7 +50,6 @@ defmodule Summary do
     victories
     |> Enum.sort()
     |> Enum.at(pos)
-    |> elem(1)
   end
 
   @doc """
@@ -60,12 +58,13 @@ defmodule Summary do
   ## Examples
 
       iex> Summary.victories([{:victory, 1}, {:defeat, 6}, {:victory, 7}])
-      [{:victory, 1}, {:victory, 7}]
+      [1, 7]
 
   """
   def victories(battles) do
     battles
     |> Enum.filter(fn {k, _} -> k == :victory end)
+    |> Enum.map(fn {_, v} -> v end)
   end
 
   @doc """
