@@ -25,40 +25,20 @@ defmodule Battle do
    * If the defender dice are higher than the attacker, the attacker loose 1 troop.
    * If the dice are equal, the attacker loose 1 troop.
   """
-  defp roll_die(troops, m) do
-    e = min(m, troops)
 
-    1..e
-    |> Enum.map(fn _ -> Enum.random(1..6) end)
-    |> Enum.sort(&(&1 >= &2))
-  end
+  @doc """
+  Adjust remaining troops by a changeset tuple.
 
-  def attack(troops), do: roll_die(troops, 3)
+  ## Examples
 
-  def defend(troops), do: roll_die(troops, 2)
+    iex> Battle.adjust({-1, -1}, {6, 6})
+    {5, 5}
+    iex> Battle.adjust({-2, 0}, {6, 6})
+    {4, 6}
+    iex> Battle.adjust({0, -2}, {6, 6})
+    {6, 4}
 
-  def roll({a, d}) do
-    attackers = attack(a)
-    defenders = defend(d)
-    {attackers, defenders}
-  end
-
-  def evaluate!(a, d), do: if(a > d, do: {0, -1}, else: {-1, 0})
-
-  def evaluate(dice, options \\ []) do
-    dice
-    |> Enhancement.add_benefit(options)
-    |> Enhancement.add_dice_bonus(options)
-
-    {a, d} = dice
-
-    Enum.zip(a, d)
-    |> Enum.map(fn {a, d} -> evaluate!(a, d) end)
-    |> Enum.unzip()
-    |> Tuple.to_list()
-    |> Enum.map(&Enum.sum/1)
-    |> List.to_tuple()
-  end
+  """
 
   def adjust(troops, remaining) do
     [troops, remaining]
@@ -69,6 +49,108 @@ defmodule Battle do
     |> List.to_tuple()
   end
 
+  @doc """
+  Roll attack dice: 1-3 dice depending on troop count.
+
+  ## Examples
+
+    iex> Battle.attack(10) |> Enum.count()
+    3
+    iex> Battle.attack(2) |> Enum.count()
+    2
+    iex> Battle.attack(1) |> Enum.count()
+    1
+
+  """
+
+  def attack(troops), do: roll_dice(troops, 3)
+
+  @doc """
+  Roll defence dice: 1-2 dice depending on troop count.
+
+  ## Examples
+
+    iex> Battle.attack(10) |> Enum.count()
+    3
+    iex> Battle.attack(1) |> Enum.count()
+    1
+
+  """
+
+  def defend(troops), do: roll_dice(troops, 2)
+
+  @doc """
+  Single dice evaluation. On equal values, defence wins.
+
+  ## Examples
+
+    iex> Battle.evaluate!(5, 4)
+    {0, -1}
+    iex> Battle.evaluate!(4, 5)
+    {-1, 0}
+    iex> Battle.evaluate!(5, 5)
+    {-1, 0}
+
+  """
+
+  def evaluate!(a, d), do: if(a > d, do: {0, -1}, else: {-1, 0})
+
+  @doc """
+  Multiple dice evaluation. Returns the following:
+
+  {-2, 0} or {-1, 0} if attacker lost,
+  {0, -2} or {0, -1} if defender lost, or
+  {-1, -1} if both lost 1 troop.
+  """
+
+  def evaluate(dice) do
+    {a, d} = dice
+
+    Enum.zip(a, d)
+    |> Enum.map(fn {a, d} -> evaluate!(a, d) end)
+    |> Enum.unzip()
+    |> Tuple.to_list()
+    |> Enum.map(&Enum.sum/1)
+    |> List.to_tuple()
+  end
+
+  @doc """
+  Return a minimum `m` number of dice (integers, 1-6), sorted in reverse order.
+  """
+  def roll_dice(troops, m) do
+    e = min(m, troops)
+
+    1..e
+    |> Enum.map(fn _ -> Enum.random(1..6) end)
+    |> Enum.sort(&(&1 >= &2))
+  end
+
+  @doc """
+  Roll attack and defence dice: 1-3 for attack, 1-2 for defence.
+
+  Returns a tuple of 2 lists, created by `roll_dice/2`.
+  """
+
+  def roll({a, d}) do
+    attackers = attack(a)
+    defenders = defend(d)
+    {attackers, defenders}
+  end
+
+  @doc """
+  A *combat* consists of
+
+  1. Dice roll (`roll/2`): Attackers and defence roll dice according to *Roll rules*. Optionally adding dice
+    Enhancements (`Enhancement.enhance_dice/2`),
+  2. Dice evaluation (`evaluate/1`): Each dice are matched according to rules.
+  3. remaining troops are adjusted bases on losses.
+  4. If any side has zero (0) troops left, :defeat or :victory is declared and remaining troops on the winning
+    side is revealed.
+  5. However, if both sides still got troops, the next combat is inititated directly.
+
+  ## Examples
+  """
+
   def combat(troops, options \\ [])
 
   def combat({remaining, lost}, _options) when lost <= 0, do: {:victory, remaining}
@@ -78,7 +160,8 @@ defmodule Battle do
   def combat(troops, options) do
     troops
     |> roll
-    |> evaluate(options)
+    |> Enhancement.enhance_dice(options)
+    |> evaluate
     |> adjust(troops)
     |> combat(options)
   end
