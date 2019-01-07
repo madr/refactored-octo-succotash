@@ -11,13 +11,13 @@ defmodule Battle do
   4. The armies are adjusted. **
   5. Repeat 1-4 until no armies remain for one of the sides.
 
-  * ROLL RULES:
+  ## ROLL RULES:
 
    * The attacker rolls 3 dice if the army count is 3 or above, else the number of armies get a die:
      2 armies, 2 dice, 1 army, 1 die and so on.
    * The defender rolls 2 dice if the army count is 2 or above, otherwise rolls 1 die.
 
-  ** ADJUSTMENT RULES:
+  ## ADJUSTMENT RULES:
 
   For each pair of dice,
 
@@ -45,7 +45,13 @@ defmodule Battle do
 
   def evaluate!(a, d), do: if(a > d, do: {0, -1}, else: {-1, 0})
 
-  def evaluate({a, d}) do
+  def evaluate(dice, options \\ []) do
+    dice
+    |> Enhancement.add_benefit(options)
+    |> Enhancement.add_dice_bonus(options)
+
+    {a, d} = dice
+
     Enum.zip(a, d)
     |> Enum.map(fn {a, d} -> evaluate!(a, d) end)
     |> Enum.unzip()
@@ -63,15 +69,17 @@ defmodule Battle do
     |> List.to_tuple()
   end
 
-  def combat({remaining, lost}) when lost <= 0, do: {:victory, remaining}
+  def combat(troops, options \\ [])
 
-  def combat({lost, remaining}) when lost <= 0, do: {:defeat, remaining}
+  def combat({remaining, lost}, _options) when lost <= 0, do: {:victory, remaining}
 
-  def combat(troops) do
+  def combat({lost, remaining}, _options) when lost <= 0, do: {:defeat, remaining}
+
+  def combat(troops, options) do
     troops
     |> roll
-    |> evaluate
+    |> evaluate(options)
     |> adjust(troops)
-    |> combat
+    |> combat(options)
   end
 end
